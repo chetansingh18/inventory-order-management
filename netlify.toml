@@ -1,5 +1,5 @@
-# Netlify configuration for the React frontend.
-# In Netlify: New site → import repo → set base directory to "frontend".
+# Netlify configuration (must live at the REPO ROOT so Netlify reads it).
+# Builds the React frontend in ./frontend and publishes ./frontend/dist.
 # Add an environment variable VITE_API_BASE_URL = https://your-backend.onrender.com
 
 [build]
