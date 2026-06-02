@@ -1,0 +1,36 @@
+# Render Blueprint — deploys the backend API + a managed PostgreSQL database.
+# In the Render dashboard: New + → Blueprint → connect this repo.
+#
+# After it deploys, copy the backend's public URL (e.g.
+# https://inventory-backend.onrender.com) into your frontend host's
+# VITE_API_BASE_URL environment variable.
+
+databases:
+  - name: inventory-db
+    plan: free
+    databaseName: inventory
+    user: inventory
+
+services:
+  - type: web
+    name: inventory-backend
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      # Render's psql URL begins with postg:// — convert to the SQLAlchemy
+      # psycopg2 dialect the app expects.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: inventory-db
+          property: connectionString
+      - key: AUTO_CREATE_TABLES
+        value: "true"
+      - key: LOW_STOCK_THRESHOLD
+        value: "10"
+      # Comma-separated allowed origins. Replace with your real frontend URL;
+      # the backend also auto-allows *.vercel.app / *.netlify.app via regex.
+      - key: CORS_ORIGINS
+        value: "https://your-frontend.vercel.app"
