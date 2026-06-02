@@ -29,11 +29,13 @@ async function request(path, options = {}) {
   if (res.status === 204) return null
 
   let body = null
+  let parseFailed = false
   const text = await res.text()
   if (text) {
     try {
       body = JSON.parse(text)
     } catch {
+      parseFailed = true
       body = { detail: text }
     }
   }
@@ -42,8 +44,18 @@ async function request(path, options = {}) {
     const detail = body?.detail
     const message = Array.isArray(detail)
       ? detail.map((d) => `${d.loc?.slice(1).join('.') || 'field'}: ${d.msg}`).join('; ')
-      : detail || `Request failed (${res.status})`
+      : (typeof detail === 'string' && detail.length < 300 ? detail : `Request failed (${res.status})`)
     throw new ApiError(message, res.status)
+  }
+
+  // A 2xx response that isn't valid JSON means we're not actually talking to
+  // the API (e.g. an SPA host returned index.html). Surface a clear error
+  // instead of letting malformed data crash the UI.
+  if (parseFailed) {
+    throw new ApiError(
+      'Unexpected response from the server. Check that VITE_API_BASE_URL points to the backend API.',
+      res.status,
+    )
   }
   return body
 }
